@@ -1,0 +1,70 @@
+# Cursor Rules for Sentravision Website
+
+## Dev Server Port Management
+
+When running the development server (`npm run dev` or `vite`):
+
+1. **Always use port 5173** for the Vite dev server
+2. **If port 5173 is occupied**, automatically kill the process using that port before starting
+3. **Commands to run in sequence**:
+   ```bash
+   # Kill any process using port 5173
+   netstat -ano | findstr :5173 && taskkill /PID [PID] /F
+   # Alternative for PowerShell
+   Get-Process -Id (Get-NetTCPConnection -LocalPort 5173).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force
+   # Then start the dev server
+   npm run dev
+   ```
+
+## Port Management Commands
+
+### Windows (PowerShell)
+```powershell
+# Kill process on port 5173
+$process = Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue
+if ($process) { Stop-Process -Id $process.OwningProcess -Force }
+
+# Start dev server
+npm run dev
+```
+
+### Cross-platform (using npm scripts)
+Add to package.json scripts:
+```json
+"dev:clean": "npx kill-port 5173 && npm run dev",
+"kill-port": "npx kill-port 5173"
+```
+
+## Automation Rules
+
+- Before running `npm run dev`, check if port 5173 is in use
+- If occupied, kill the process and show a message: "Cleared port 5173, starting dev server..."
+- Always ensure the dev server starts on exactly port 5173
+- If port killing fails, show instructions for manual port management
+
+## Vite Configuration
+
+Ensure vite.config.ts always specifies port 5173:
+```typescript
+export default defineConfig({
+  server: {
+    port: 5173,
+    strictPort: true, // Exit if port is not available
+    host: true // Allow external connections
+  }
+})
+```
+
+## Development Workflow
+
+1. When user types "run dev server" or similar commands
+2. Automatically execute port cleanup
+3. Start the development server
+4. Confirm server is running on http://localhost:5173
+5. Open browser automatically if requested
+
+## Error Handling
+
+- If port 5173 cannot be freed, suggest alternative solutions
+- Show clear error messages with next steps
+- Provide manual commands for port management if automation fails 
